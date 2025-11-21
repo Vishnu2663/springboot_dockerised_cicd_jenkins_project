@@ -1,57 +1,82 @@
 pipeline {
-    // 1. Define where the job runs
+    // 1. Where the job runs (usually a dedicated Jenkins agent)
     agent any 
     
-    // 2. Define environment variables
+    // 2. Define standard environment variables
     environment {
-        // Change this if your JAR name changes
-        APP_NAME = 'demo-0.0.1-SNAPSHOT' 
-        // This assumes you are using Maven and the JAR is in the default location
-        JAR_PATH = "target/${APP_NAME}.jar" 
+        // Customize this to match your artifact name
+        ARTIFACT_NAME = 'demo-0.0.1-SNAPSHOT' 
+        // Define the full path to the built JAR file
+        JAR_PATH = "target/${ARTIFACT_NAME}.jar" 
+        // Deployment target details (REPLACE THESE PLACEHOLDERS)
+        DEPLOY_USER = 'jenkins-deploy'
+        DEPLOY_HOST = '3.7.58.209' // Example: Your remote server IP
+        DEPLOY_DIR  = '/var/www/springboot-app/' // Remote directory
     }
     
-    // 3. Define the steps (stages) in the CI process
+    // 3. Define post-build actions, even if stages fail
+    post {
+        always {
+            // Clean up the Jenkins workspace after the build finishes
+            cleanWs() 
+        }
+        success {
+            echo "Pipeline finished successfully! Deployment started."
+        }
+        failure {
+            echo "Pipeline failed! Check the build and test stages."
+        }
+    }
+    
+    // 4. Define the sequential stages (steps) of the CI/CD process
     stages {
         
         stage('Checkout Source Code') {
             steps {
-                // Ensure the workspace is clean before starting the build
-                cleanWs() 
-                // Jenkins automatically checks out the code from the SCM configured in the job
+                // The pipeline automatically checks out the code from the SCM configured
+                echo 'Checking out code from GitHub...'
             }
         }
         
-        stage('Build & Test') {
+        stage('Build & Unit Test') {
             steps {
-                // Use the sh step to execute a shell command
-                // 'clean' deletes the existing 'target' folder (important!)
-                // 'package' runs tests and creates the JAR file
-                sh 'mvn clean package -DskipTests'
-                
-                // You can add a separate stage for tests if needed:
-                // sh 'mvn test' 
+                // Use Maven to clean the 'target' directory, compile, and run tests
+                // Remove '-DskipTests' to enable unit tests.
+                sh 'mvn clean package' 
             }
         }
         
+        stage('Vulnerability Scan (Optional)') {
+            when {
+                // Only run this scan on the main branch
+                branch 'main' 
+            }
+            steps {
+                // Example: Integrate a security scanner (like SonarQube or OWASP Dependency Check)
+                echo 'Running vulnerability and dependency checks...'
+                // sh 'mvn dependency-check:check' 
+            }
+        }
+
         stage('Archive Artifact') {
             steps {
-                // Archive the generated JAR file from the 'target' folder
-                // This makes the JAR available for download on the Jenkins job page
+                // Make the JAR file available for download on the Jenkins job page
+                echo "Archiving artifact: ${JAR_PATH}"
                 archiveArtifacts artifacts: "${JAR_PATH}", fingerprint: true
             }
         }
         
-        // This stage is optional, depending on how you deploy
-        stage('Deploy') { 
+        stage('Deploy to Server') {
             steps {
-                // Example: Deploying the JAR to a remote server via SSH
-                // NOTE: This requires SSH setup/plugins in Jenkins
+                echo "Deploying ${JAR_PATH} to ${DEPLOY_HOST}..."
                 
-                // You will need to replace the PLACEHOLDERS below
-                sh "scp ${JAR_PATH} user@your-server-ip:/path/to/deploy/" 
+                // 1. Copy the JAR artifact to the remote server using SSH/SCP
+                // NOTE: This assumes Jenkins has SSH credentials configured for the DEPLOY_USER
+                sh "scp ${JAR_PATH} ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}"
                 
-                // After copying, you would typically run a command on the remote server to start the app
-                // sh 'ssh user@your-server-ip "nohup java -jar /path/to/deploy/${JAR_PATH} &"'
+                // 2. Restart the application on the remote server
+                // Example: Stop existing service, then start the new JAR
+                sh "ssh ${DEPLOY_USER}@${DEPLOY_HOST} \"sudo systemctl restart springboot-app.service\"" 
             }
         }
     }
