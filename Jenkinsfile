@@ -11,7 +11,7 @@ pipeline {
         // Deployment target details (REPLACE THESE PLACEHOLDERS)
         DEPLOY_USER = 'jenkins-deploy'
         DEPLOY_HOST = '3.7.58.209' // Example: Your remote server IP
-        DEPLOY_DIR  = '/var/www/jenkins-deploy/' // Remote directory
+        DEPLOY_DIR  = '/var/www/springboot-app/' // Remote directory
     }
 
     // 3. Define post-build actions, even if stages fail
