@@ -1,24 +1,24 @@
 pipeline {
     // 1. Where the job runs (usually a dedicated Jenkins agent)
-    agent any 
-    
+    agent any
+
     // 2. Define standard environment variables
     environment {
         // Customize this to match your artifact name
-        ARTIFACT_NAME = 'demo-0.0.1-SNAPSHOT' 
+        ARTIFACT_NAME = 'demo-0.0.1-SNAPSHOT'
         // Define the full path to the built JAR file
-        JAR_PATH = "target/${ARTIFACT_NAME}.jar" 
+        JAR_PATH = "target/${ARTIFACT_NAME}.jar"
         // Deployment target details (REPLACE THESE PLACEHOLDERS)
         DEPLOY_USER = 'jenkins-deploy'
         DEPLOY_HOST = '3.7.58.209' // Example: Your remote server IP
         DEPLOY_DIR  = '/var/www/springboot-app/' // Remote directory
     }
-    
+
     // 3. Define post-build actions, even if stages fail
     post {
         always {
             // Clean up the Jenkins workspace after the build finishes
-            cleanWs() 
+            cleanWs()
         }
         success {
             echo "Pipeline finished successfully! Deployment started."
@@ -27,34 +27,34 @@ pipeline {
             echo "Pipeline failed! Check the build and test stages."
         }
     }
-    
+
     // 4. Define the sequential stages (steps) of the CI/CD process
     stages {
-        
+
         stage('Checkout Source Code') {
             steps {
-                // The pipeline automatically checks out the code from the SCM configured
+ // The pipeline automatically checks out the code from the SCM configured
                 echo 'Checking out code from GitHub...'
             }
         }
-        
+
         stage('Build & Unit Test') {
             steps {
                 // Use Maven to clean the 'target' directory, compile, and run tests
                 // Remove '-DskipTests' to enable unit tests.
-                sh 'mvn clean package' 
+                sh 'mvn clean package'
             }
         }
-        
+
         stage('Vulnerability Scan (Optional)') {
             when {
                 // Only run this scan on the main branch
-                branch 'main' 
+                branch 'main'
             }
             steps {
                 // Example: Integrate a security scanner (like SonarQube or OWASP Dependency Check)
                 echo 'Running vulnerability and dependency checks...'
-                // sh 'mvn dependency-check:check' 
+                // sh 'mvn dependency-check:check'
             }
         }
 
@@ -65,18 +65,18 @@ pipeline {
                 archiveArtifacts artifacts: "${JAR_PATH}", fingerprint: true
             }
         }
-        
+
         stage('Deploy to Server') {
-            steps {
+ steps {
                 echo "Deploying ${JAR_PATH} to ${DEPLOY_HOST}..."
-                
+
                 // 1. Copy the JAR artifact to the remote server using SSH/SCP
                 // NOTE: This assumes Jenkins has SSH credentials configured for the DEPLOY_USER
                 sh "scp ${JAR_PATH} ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}"
-                
+
                 // 2. Restart the application on the remote server
                 // Example: Stop existing service, then start the new JAR
-                sh "ssh ${DEPLOY_USER}@${DEPLOY_HOST} \"sudo systemctl restart springboot-app.service\"" 
+                sh "ssh ${DEPLOY_USER}@${DEPLOY_HOST} \"sudo systemctl restart springboot-app.service\""
             }
         }
     }
