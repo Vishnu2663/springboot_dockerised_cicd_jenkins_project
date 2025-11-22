@@ -4,15 +4,16 @@ pipeline {
     /***** ENVIRONMENT CONFIG *****/
     environment {
         // Deployment / server details
-        APP_NAME    = "myapp"                    // systemd service name: myapp.service
-        APP_SERVER  = "172.31.17.196"            // PRIVATE IP of app server (change if needed)
-        DEPLOY_USER = "deploy"                   // user on app server
-        DEPLOY_DIR  = "/opt/myapp"               // directory on app server
-        JAR_NAME    = "demo-0.0.1-SNAPSHOT.jar"  // jar file name (your build output)
-        SERVER_PORT = "8080"                     // Spring Boot port
+      environment {
+    APP_NAME    = "myapp"
+    APP_SERVER  = "172.31.17.196"
+    DEPLOY_USER = "ubuntu"                 // <── changed from deploy
+    DEPLOY_DIR  = "/opt/myapp"
+    JAR_NAME    = "demo-0.0.1-SNAPSHOT.jar"
+    SERVER_PORT = "8080"
+    SSH_CRED_ID = "app-server-ssh-ubuntu"  // <── new credential ID
+    
 
-        // Jenkins SSH credentials (must match ID in Jenkins)
-        SSH_CRED_ID = "app-server-ssh"
 
         // Git repo
         GIT_REPO   = "https://github.com/Vishnu2663/springboot_cicd_jenkins_project.git"
@@ -71,19 +72,18 @@ pipeline {
 }
 
 
-   stage('Restart Service on App Server') {
+ stage('Restart Service on App Server') {
     steps {
         echo "Restarting systemd service ${APP_NAME}.service on ${APP_SERVER}..."
         sshagent (credentials: [env.SSH_CRED_ID]) {
             sh """
                 set -ex
                 ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${APP_SERVER} \\
-                  'sudo -n /usr/bin/systemctl restart ${APP_NAME}.service && sudo -n /usr/bin/systemctl status ${APP_NAME}.service --no-pager'
+                  'sudo systemctl restart ${APP_NAME}.service && sudo systemctl status ${APP_NAME}.service --no-pager'
             """
         }
     }
 }
-
 
 
 
