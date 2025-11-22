@@ -1,53 +1,70 @@
 pipeline {
+    agent any
 
-    agent none
-
-    tools {
-        maven 'maven'       // ✔ Uses Jenkins Maven tool
+    environment {
+        APP_NAME    = "myapp"
+        APP_SERVER  = "172.31.17.196"          // change this
+        SSH_CRED_ID = "app-server-ssh"
+        DEPLOY_DIR  = "/opt/myapp"
+        JAR_NAME    = "app.jar"
+        GIT_BRANCH  = "main"
     }
 
     stages {
-
-        stage('Checkout Code') {
-            agent { label 'worker-node' }
+        stage('Checkout') {
             steps {
-                echo "===== CHECKING OUT FROM GITHUB ====="
-                git branch: 'main', url: 'https://github.com/Vishnu2663/springboot_cicd_jenkins_project.git'
+                git branch: "${GIT_BRANCH}", url: 'https://github.com/yourname/your-spring-boot-repo.git'
             }
         }
 
-        stage('Build on Worker Node') {
-            agent { label 'worker-node' }
+        stage('Build') {
             steps {
-                sh '''
-                    echo "===== JAVA VERSION ====="
-                    java -version
-
-                    echo "===== MAVEN VERSION (JENKINS TOOL) ====="
-                    mvn -version
-
-                    echo "===== BUILDING PROJECT ====="
-                    mvn clean package -DskipTests
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Deploy Spring Boot App') {
-            agent { label 'worker-node' }
+        stage('Copy Artifact to App Server') {
             steps {
-                sh '''
-                    APP_NAME=myapp
-                    JAR_FILE=target/*.jar
+                sshagent (credentials: [env.SSH_CRED_ID]) {
+                    sh """
+                        JAR_FILE=\$(ls target/*.jar | head -n 1)
+                        echo "Using jar: \$JAR_FILE"
 
-                    echo "Stopping old application..."
-                    pkill -f $APP_NAME || true
-
-                    echo "Starting new application..."
-                    nohup java -jar $JAR_FILE > /tmp/$APP_NAME.log 2>&1 &
-
-                    echo "Application Deployed Successfully!"
-                '''
+                        scp -o StrictHostKeyChecking=no "\$JAR_FILE" deploy@${APP_SERVER}:${DEPLOY_DIR}/${JAR_NAME}
+                    """
+                }
             }
+        }
+
+        stage('Restart Service on App Server') {
+            steps {
+                sshagent (credentials: [env.SSH_CRED_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no deploy@${APP_SERVER} \\
+                          'sudo systemctl restart ${APP_NAME}.service && sudo systemctl status ${APP_NAME}.service --no-pager'
+                    """
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    def status = sh(returnStatus: true, script: "curl -sSf http://${APP_SERVER}:8080/actuator/health || curl -sSf http://${APP_SERVER}:8080/")
+                    if (status != 0) {
+                        error "Health check failed!"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment success! App should be running on http://${APP_SERVER}:8080/"
+        }
+        failure {
+            echo "Deployment failed. Check console output."
         }
     }
 }
