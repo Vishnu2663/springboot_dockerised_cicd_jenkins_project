@@ -148,3 +148,13 @@ Create 2 Ubuntu servers: 1.Jenkins Server
 
        Save.
   ## Run the pipeline     
+
+  ## Here is a look at the jenkins full stage build view dashboard:
+
+![A screenshot of the main project dashboard](images/d1.png)
+
+
+## Here is a look at the application dashboard with port number:
+
+![A screenshot of the main project dashboard](images/d2.png)
+
