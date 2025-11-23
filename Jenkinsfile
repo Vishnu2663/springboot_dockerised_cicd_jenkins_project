@@ -20,27 +20,27 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
-            steps {
-                script {
-                    // Build image with build number tag
-                    def image = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-                }
-
-                withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'vishnu2663',
-                        passwordVariable: 'Vvishnu@2663'
-                )]) {
-                    sh '''
-                        echo "$DOCKERHUB_PASS" | docker login -u "vishnu2663" --password-stdin
-                        docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                        docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                        docker push ${DOCKER_IMAGE}:latest
-                    '''
-                }
-            }
+    stage('Build & Push Docker Image') {
+    steps {
+        script {
+            def image = docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
         }
+
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-creds',
+            usernameVariable: 'DOCKERHUB_USER',
+            passwordVariable: 'DOCKERHUB_PASS'
+        )]) {
+            sh '''
+                echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                docker push ${DOCKER_IMAGE}:latest
+            '''
+        }
+    }
+}
+
 
         stage('Deploy to App Server') {
             steps {
