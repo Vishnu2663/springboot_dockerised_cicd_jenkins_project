@@ -151,10 +151,10 @@ Create 2 Ubuntu servers: 1.Jenkins Server
 
   ## Here is a look at the jenkins full stage build view dashboard:
 
-![A screenshot of the main project dashboard](images/d1.png)
+![A screenshot of the main project dashboard](images/d2.png)
 
 
 ## Here is a look at the application dashboard with port number:
 
-![A screenshot of the main project dashboard](images/d2.png)
+![A screenshot of the main project dashboard](images/d1.png)
 
