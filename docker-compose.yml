@@ -1,0 +1,7 @@
+services:
+  spring-app:
+    image: vishnu2663/my-spring-app:latest   # <-- change this
+    container_name: spring-app
+    restart: always
+    ports:
+      - "8080:8080"
