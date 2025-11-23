@@ -2,48 +2,64 @@ pipeline {
     agent any
 
     environment {
-        APP_SERVER_IP = '172.31.16.31'  //private ip of app_server
-        DEPLOY_USER   = 'deploy'
-        JAR_NAME      = 'demo-0.0.1-SNAPSHOT.jar '  //jar file name in target
-        REMOTE_PATH   = '/opt/myapp/app.jar'
+        DOCKER_IMAGE = "vishnu2663/my-spring-app"  // change
+        APP_SERVER_IP = "13.203.94.209"             // change
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Vishnu2663/springboot_cicd_jenkins_project.git'
+                checkout scm
+                // or: git 'https://github.com/yourname/yourrepo.git'
             }
         }
 
-        stage('Build') {
+        stage('Build JAR') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Copy JAR to App Server') {
+        stage('Build & Push Docker Image') {
             steps {
-                sh '''
-                scp -o StrictHostKeyChecking=no target/$JAR_NAME ${DEPLOY_USER}@${APP_SERVER_IP}:${REMOTE_PATH}
-                '''
+                script {
+                    // Build image with build number tag
+                    def image = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
+                }
+
+                withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                        docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                        docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                        docker push ${DOCKER_IMAGE}:latest
+                    '''
+                }
             }
         }
 
-        stage('Restart Service on App Server') {
+        stage('Deploy to App Server') {
             steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${APP_SERVER_IP} "sudo -n /usr/bin/systemctl restart myapp.service"
-                '''
+                sshagent(credentials: ['app-server-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@${APP_SERVER_IP} '
+                          docker pull ${DOCKER_IMAGE}:latest &&
+                          cd /opt/myapp &&
+                          docker compose -f docker-compose.yml up -d
+                        '
+                    """
+                }
             }
         }
+    }
 
-        stage('Check Service Status') {
-            steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${APP_SERVER_IP} "sudo -n /usr/bin/systemctl status myapp.service --no-pager"
-                '''
-            }
+    post {
+        always {
+            sh 'docker logout || true'
         }
     }
 }
