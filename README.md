@@ -100,7 +100,7 @@ Create 2 Ubuntu servers: 1.Jenkins Server
        chmod 700 ~/.ssh
       chmod 600 ~/.ssh/authorized_keys
 ## Test SSH from Jenkins server in ubuntu user
-       ssh ubuntu@13.203.94.209 "hostname"
+       ssh ubuntu@APP_SERVER_PUBLIC_IP "hostname"
 ## Jenkins Credentials configuration
 # Docker Hub credentials
        Path: Manage Jenkins → Credentials → System → Global → Add Credentials
