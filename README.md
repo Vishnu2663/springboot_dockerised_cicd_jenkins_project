@@ -37,8 +37,10 @@ Create 2 Ubuntu servers: 1.Jenkins Server
 ## Allow Jenkins user to use Docker
      sudo usermod -aG docker jenkins
      sudo systemctl restart jenkins
-##  Get Jenkins unlock password (this will generate password for jenkins)
- #  copy public ip of jenkins and paste in chormoe with :8080
+##  Get Jenkins unlock password (this will generate password for 
+     sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+ #  copy public ip of jenkins and paste in browser with :8080
+
 ##  Install “Docker Pipeline” plugin
 #  Manage Jenkins → Manage Plugins → Available → search Docker Pipeline → Install → restart Jenkins.
 
