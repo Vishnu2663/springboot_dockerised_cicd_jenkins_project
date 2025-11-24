@@ -147,6 +147,8 @@ Create 2 Ubuntu servers: 1.Jenkins Server
        Branch: */main (or */master as per your repo)
 
        Save.
+  ## Before that in jenkins server as ubuntu user login with docker crednetials
+        docker login -u DOCKERHUB_USERNAME # once u give enter it will ask dockerhub password 
   ## Run the pipeline     
 
   ## Here is a look at the jenkins full stage build view dashboard:
