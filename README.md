@@ -113,7 +113,7 @@ Create 2 Ubuntu servers: 1.Jenkins Server
 
        ID: dockerhub-creds
 
-       Username: dcokerhub_username
+       Username: DOXKERHUB_USERNAME
 
        Password: dockerhub_password (or Docker Hub access token)
 
