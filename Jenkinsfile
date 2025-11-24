@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "vishnu2663/my-spring-app"  // change
-        APP_SERVER_IP = "13.203.94.209"             // change
+        DOCKER_IMAGE = "vishnu2663/my-spring-app"  // change this to DOCKERHUB_USERNAME
+        APP_SERVER_IP = "13.203.94.209"             // change this to app_server_public_ip
     }
 
     stages {
