@@ -21,6 +21,8 @@ Create 2 Ubuntu servers: 1.Jenkins Server
 
         sudo apt update -y
         sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+## Install docker-compose (in both servers)
+        sudo apt install docker-compose -y
 ## Install Jenkins
        curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key \
        | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
