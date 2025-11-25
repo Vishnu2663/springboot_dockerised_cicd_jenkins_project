@@ -2,7 +2,7 @@
 Create 2 Ubuntu servers: 1.Jenkins Server
                          2.App Server     (Use your .pem key to connect from MobaXterm as user ubuntu.)
 
-## Setup Jenkins Server (as ubuntu)
+## Setup Jenkins Server (as ubuntu user)
         sudo apt update -y
 ## Install Java + Maven in ubuntu user 
         sudo apt install -y openjdk-17-jdk
